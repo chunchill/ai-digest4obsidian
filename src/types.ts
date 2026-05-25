@@ -4,6 +4,7 @@ export interface FollowBuildersSettings {
   syncPodcasts: boolean;
   syncBlogs: boolean;
   overwriteExisting: boolean;
+  writeDailyDigest: boolean;
 }
 
 export interface FollowBuildersSyncState {
@@ -42,6 +43,10 @@ export interface SyncResult {
   updated: number;
   skipped: number;
   failed: number;
+  digestCreated: number;
+  digestUpdated: number;
+  digestSkipped: number;
+  digestFailed: number;
   errors: string[];
 }
 
@@ -50,7 +55,8 @@ export const DEFAULT_SETTINGS: FollowBuildersSettings = {
   syncX: true,
   syncPodcasts: true,
   syncBlogs: true,
-  overwriteExisting: false
+  overwriteExisting: false,
+  writeDailyDigest: true
 };
 
 export function createDefaultState(): FollowBuildersSyncState {

@@ -7,7 +7,8 @@ describe("settings defaults", () => {
       syncX: true,
       syncPodcasts: true,
       syncBlogs: true,
-      overwriteExisting: false
+      overwriteExisting: false,
+      writeDailyDigest: true
     });
   });
 
