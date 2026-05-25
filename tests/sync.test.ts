@@ -47,7 +47,7 @@ describe("runSync", () => {
     const result = await runSync({
       settings,
       state,
-      fetchFeeds: async () => ({ items: [item], errors: [] }),
+      fetchFeeds: async () => ({ items: [item], skipped: 0, errors: [] }),
       writeItem,
       now: syncedNow
     });
@@ -71,7 +71,7 @@ describe("runSync", () => {
     const result = await runSync({
       settings: { ...settings, overwriteExisting: false },
       state,
-      fetchFeeds: async () => ({ items: [item], errors: [] }),
+      fetchFeeds: async () => ({ items: [item], skipped: 0, errors: [] }),
       writeItem,
       now: syncedNow
     });
@@ -88,7 +88,7 @@ describe("runSync", () => {
     const result = await runSync({
       settings,
       state,
-      fetchFeeds: async () => ({ items: [item], errors: ["X feed failed: network down"] }),
+      fetchFeeds: async () => ({ items: [item], skipped: 0, errors: ["X feed failed: network down"] }),
       writeItem: async () => writeResult("created"),
       now: syncedNow
     });
@@ -111,7 +111,7 @@ describe("runSync", () => {
     const result = await runSync({
       settings,
       state,
-      fetchFeeds: async () => ({ items: [failedItem, successfulItem], errors: [] }),
+      fetchFeeds: async () => ({ items: [failedItem, successfulItem], skipped: 0, errors: [] }),
       writeItem: vi
         .fn()
         .mockRejectedValueOnce(new Error("vault unavailable"))
@@ -125,5 +125,21 @@ describe("runSync", () => {
     expect(state.syncedIds[failedItem.id]).toBeUndefined();
     expect(state.syncedIds[successfulItem.id]).toBe(true);
     expect(state.lastSyncedAt).toBe(nowIso);
+  });
+
+  it("counts malformed items skipped during feed parsing", async () => {
+    const state: FollowBuildersSyncState = { syncedIds: {} };
+
+    const result = await runSync({
+      settings,
+      state,
+      fetchFeeds: async () => ({ items: [item], skipped: 2, errors: [] }),
+      writeItem: async () => writeResult("created"),
+      now: syncedNow
+    });
+
+    expect(result.created).toBe(1);
+    expect(result.skipped).toBe(2);
+    expect(state.syncedIds[item.id]).toBe(true);
   });
 });

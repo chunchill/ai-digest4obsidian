@@ -41,6 +41,7 @@ export async function runSync({
   };
 
   const fetched = await fetchFeeds(settings);
+  result.skipped += fetched.skipped;
   result.errors.push(...fetched.errors);
 
   for (const item of fetched.items) {

@@ -120,6 +120,26 @@ describe("parsePodcastFeed", () => {
       body: "Episode transcript"
     });
   });
+
+  it("keeps title-only podcast items when transcript is unavailable", () => {
+    const [item] = parsePodcastFeed({
+      podcasts: [
+        {
+          name: "Latent Space",
+          title: "AI episode",
+          url: "https://www.latent.space/p/title-only",
+          publishedAt: "2026-05-23T12:00:00.000Z"
+        }
+      ]
+    });
+
+    expect(item).toMatchObject({
+      id: "podcast:https://www.latent.space/p/title-only",
+      source: "podcast",
+      title: "Latent Space: AI episode",
+      body: "AI episode"
+    });
+  });
 });
 
 describe("parseBlogFeed", () => {
@@ -144,6 +164,26 @@ describe("parseBlogFeed", () => {
       url: "https://www.anthropic.com/engineering/post",
       createdAt: "2026-05-22T09:00:00.000Z",
       body: "Blog content"
+    });
+  });
+
+  it("keeps title-only blog items when content is unavailable", () => {
+    const [item] = parseBlogFeed({
+      blogs: [
+        {
+          source: "Anthropic Engineering",
+          title: "Engineering post",
+          url: "https://www.anthropic.com/engineering/title-only",
+          publishedAt: "2026-05-22T09:00:00.000Z"
+        }
+      ]
+    });
+
+    expect(item).toMatchObject({
+      id: "blog:https://www.anthropic.com/engineering/title-only",
+      source: "blog",
+      title: "Anthropic Engineering: Engineering post",
+      body: "Engineering post"
     });
   });
 });
@@ -203,6 +243,7 @@ describe("fetchEnabledFeeds", () => {
 
     expect(result).toEqual({
       items: [],
+      skipped: 0,
       errors: ["X feed failed: expected top-level x array"]
     });
   });
@@ -230,6 +271,7 @@ describe("fetchEnabledFeeds", () => {
     });
 
     expect(result.errors).toEqual(["Podcast feed warning: transcript fetch incomplete"]);
+    expect(result.skipped).toBe(0);
     expect(result.items).toHaveLength(1);
     expect(result.items[0]?.id).toBe("podcast:https://www.latent.space/p/ai-episode");
   });
@@ -259,8 +301,45 @@ describe("fetchEnabledFeeds", () => {
     });
 
     expect(result.errors).toEqual(["Podcast feed failed: expected top-level podcasts array"]);
+    expect(result.skipped).toBe(0);
     expect(result.items.map((item) => item.id)).toEqual([
       "blog:https://www.anthropic.com/engineering/post"
     ]);
+  });
+
+  it("counts malformed feed items as skipped while returning valid items", async () => {
+    requestUrlMock.mockResolvedValueOnce(
+      jsonResponse({
+        x: [
+          {
+            name: "Thariq",
+            handle: "trq212",
+            tweets: [
+              {
+                id: "2058377974882210096",
+                text: "valid tweet",
+                createdAt: "2026-05-24T02:51:49.000Z",
+                url: "https://x.com/trq212/status/2058377974882210096"
+              },
+              {
+                id: "missing-url",
+                text: "invalid tweet",
+                createdAt: "2026-05-24T02:51:49.000Z"
+              }
+            ]
+          }
+        ]
+      })
+    );
+
+    const result = await fetchEnabledFeeds({
+      syncX: true,
+      syncPodcasts: false,
+      syncBlogs: false
+    });
+
+    expect(result.items.map((item) => item.id)).toEqual(["x:2058377974882210096"]);
+    expect(result.skipped).toBe(1);
+    expect(result.errors).toEqual([]);
   });
 });

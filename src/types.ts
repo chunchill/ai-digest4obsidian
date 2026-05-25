@@ -33,6 +33,7 @@ export interface FeedItem {
 
 export interface FetchResult {
   items: FeedItem[];
+  skipped: number;
   errors: string[];
 }
 

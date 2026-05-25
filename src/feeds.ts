@@ -42,6 +42,11 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+interface ParsedFeed {
+  items: FeedItem[];
+  skipped: number;
+}
+
 function feedWarnings(raw: unknown, label: string): string[] {
   if (!isRecord(raw)) {
     return [];
@@ -58,29 +63,33 @@ function parseFetchedFeed(
   label: string,
   key: string,
   raw: unknown,
-  parser: (rawFeed: unknown) => FeedItem[]
+  parser: (rawFeed: unknown) => ParsedFeed
 ): FetchResult {
   const errors = feedWarnings(raw, label);
 
   if (!hasArrayField(raw, key)) {
     return {
       items: [],
+      skipped: 0,
       errors: [...errors, `${label} feed failed: expected top-level ${key} array`]
     };
   }
 
+  const parsed = parser(raw);
   return {
-    items: parser(raw),
+    items: parsed.items,
+    skipped: parsed.skipped,
     errors
   };
 }
 
-export function parseXFeed(raw: unknown): FeedItem[] {
+function parseXFeedResult(raw: unknown): ParsedFeed {
   if (!isRecord(raw)) {
-    return [];
+    return { items: [], skipped: 0 };
   }
 
   const items: FeedItem[] = [];
+  let skipped = 0;
 
   for (const builderRaw of arrayField(raw, "x")) {
     if (!isRecord(builderRaw)) {
@@ -93,6 +102,7 @@ export function parseXFeed(raw: unknown): FeedItem[] {
 
     for (const tweetRaw of arrayField(builderRaw, "tweets")) {
       if (!isRecord(tweetRaw)) {
+        skipped += 1;
         continue;
       }
 
@@ -102,6 +112,7 @@ export function parseXFeed(raw: unknown): FeedItem[] {
       const url = stringField(tweetRaw, "url");
 
       if (!id || !text || !createdAt || !url) {
+        skipped += 1;
         continue;
       }
 
@@ -126,28 +137,47 @@ export function parseXFeed(raw: unknown): FeedItem[] {
     }
   }
 
-  return items;
+  return { items, skipped };
 }
 
-export function parsePodcastFeed(raw: unknown): FeedItem[] {
+export function parseXFeed(raw: unknown): FeedItem[] {
+  return parseXFeedResult(raw).items;
+}
+
+function parsePodcastFeedResult(raw: unknown): ParsedFeed {
   if (!isRecord(raw)) {
-    return [];
+    return { items: [], skipped: 0 };
   }
 
   const items: FeedItem[] = [];
+  let skipped = 0;
 
   for (const podcastRaw of arrayField(raw, "podcasts")) {
     if (!isRecord(podcastRaw)) {
+      skipped += 1;
       continue;
     }
 
-    const author = stringField(podcastRaw, "name");
-    const title = stringField(podcastRaw, "title");
-    const url = stringField(podcastRaw, "url");
-    const createdAt = stringField(podcastRaw, "publishedAt");
-    const transcript = stringField(podcastRaw, "transcript");
+    const author =
+      stringField(podcastRaw, "name") ??
+      stringField(podcastRaw, "podcast") ??
+      stringField(podcastRaw, "source") ??
+      stringField(podcastRaw, "show");
+    const title = stringField(podcastRaw, "title") ?? stringField(podcastRaw, "episodeTitle");
+    const url = stringField(podcastRaw, "url") ?? stringField(podcastRaw, "link");
+    const createdAt =
+      stringField(podcastRaw, "publishedAt") ??
+      stringField(podcastRaw, "createdAt") ??
+      stringField(podcastRaw, "date");
+    const body =
+      stringField(podcastRaw, "transcript") ??
+      stringField(podcastRaw, "summary") ??
+      stringField(podcastRaw, "description") ??
+      stringField(podcastRaw, "content") ??
+      title;
 
-    if (!title || !url || !createdAt || !transcript) {
+    if (!title || !url || !createdAt || !body) {
+      skipped += 1;
       continue;
     }
 
@@ -158,33 +188,52 @@ export function parsePodcastFeed(raw: unknown): FeedItem[] {
       author,
       url,
       createdAt,
-      body: transcript,
+      body,
       metadata: {}
     });
   }
 
-  return items;
+  return { items, skipped };
 }
 
-export function parseBlogFeed(raw: unknown): FeedItem[] {
+export function parsePodcastFeed(raw: unknown): FeedItem[] {
+  return parsePodcastFeedResult(raw).items;
+}
+
+function parseBlogFeedResult(raw: unknown): ParsedFeed {
   if (!isRecord(raw)) {
-    return [];
+    return { items: [], skipped: 0 };
   }
 
   const items: FeedItem[] = [];
+  let skipped = 0;
 
   for (const blogRaw of arrayField(raw, "blogs")) {
     if (!isRecord(blogRaw)) {
+      skipped += 1;
       continue;
     }
 
-    const author = stringField(blogRaw, "source");
+    const author =
+      stringField(blogRaw, "source") ??
+      stringField(blogRaw, "name") ??
+      stringField(blogRaw, "site") ??
+      stringField(blogRaw, "author");
     const title = stringField(blogRaw, "title");
-    const url = stringField(blogRaw, "url");
-    const createdAt = stringField(blogRaw, "publishedAt");
-    const content = stringField(blogRaw, "content");
+    const url = stringField(blogRaw, "url") ?? stringField(blogRaw, "link");
+    const createdAt =
+      stringField(blogRaw, "publishedAt") ??
+      stringField(blogRaw, "createdAt") ??
+      stringField(blogRaw, "date");
+    const body =
+      stringField(blogRaw, "content") ??
+      stringField(blogRaw, "text") ??
+      stringField(blogRaw, "summary") ??
+      stringField(blogRaw, "description") ??
+      title;
 
-    if (!title || !url || !createdAt || !content) {
+    if (!title || !url || !createdAt || !body) {
+      skipped += 1;
       continue;
     }
 
@@ -195,12 +244,16 @@ export function parseBlogFeed(raw: unknown): FeedItem[] {
       author,
       url,
       createdAt,
-      body: content,
+      body,
       metadata: {}
     });
   }
 
-  return items;
+  return { items, skipped };
+}
+
+export function parseBlogFeed(raw: unknown): FeedItem[] {
+  return parseBlogFeedResult(raw).items;
 }
 
 export async function fetchJson(url: string): Promise<unknown> {
@@ -214,12 +267,14 @@ export async function fetchEnabledFeeds(options: {
   syncBlogs: boolean;
 }): Promise<FetchResult> {
   const items: FeedItem[] = [];
+  let skipped = 0;
   const errors: string[] = [];
 
   if (options.syncX) {
     try {
-      const result = parseFetchedFeed("X", "x", await fetchJson(FEED_X_URL), parseXFeed);
+      const result = parseFetchedFeed("X", "x", await fetchJson(FEED_X_URL), parseXFeedResult);
       items.push(...result.items);
+      skipped += result.skipped;
       errors.push(...result.errors);
     } catch (error) {
       errors.push(`X feed failed: ${errorMessage(error)}`);
@@ -232,9 +287,10 @@ export async function fetchEnabledFeeds(options: {
         "Podcast",
         "podcasts",
         await fetchJson(FEED_PODCASTS_URL),
-        parsePodcastFeed
+        parsePodcastFeedResult
       );
       items.push(...result.items);
+      skipped += result.skipped;
       errors.push(...result.errors);
     } catch (error) {
       errors.push(`Podcast feed failed: ${errorMessage(error)}`);
@@ -243,13 +299,14 @@ export async function fetchEnabledFeeds(options: {
 
   if (options.syncBlogs) {
     try {
-      const result = parseFetchedFeed("Blog", "blogs", await fetchJson(FEED_BLOGS_URL), parseBlogFeed);
+      const result = parseFetchedFeed("Blog", "blogs", await fetchJson(FEED_BLOGS_URL), parseBlogFeedResult);
       items.push(...result.items);
+      skipped += result.skipped;
       errors.push(...result.errors);
     } catch (error) {
       errors.push(`Blog feed failed: ${errorMessage(error)}`);
     }
   }
 
-  return { items, errors };
+  return { items, skipped, errors };
 }
