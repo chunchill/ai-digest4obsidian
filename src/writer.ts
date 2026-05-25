@@ -51,12 +51,36 @@ function isFolder(entry: VaultEntry): entry is TFolder | FakeFolder {
   return isTFolder(entry) || fakeKind(entry) === "folder";
 }
 
+export function normalizeRootFolder(rootFolder: string): string {
+  const normalized = normalizePath(rootFolder.trim().replace(/\\/g, "/")).replace(/\/+$/g, "");
+
+  if (!normalized) {
+    throw new Error("Unsafe root folder: path must not be empty");
+  }
+
+  if (normalized.startsWith("/") || /^[A-Za-z]:($|\/)/.test(normalized)) {
+    throw new Error("Unsafe root folder: absolute paths are not allowed");
+  }
+
+  const segments = normalized.split("/");
+  const unsafeSegment = segments.find(
+    (segment) => segment === "." || segment === ".." || segment.toLowerCase() === ".obsidian"
+  );
+
+  if (unsafeSegment) {
+    throw new Error(`Unsafe root folder: disallowed path segment "${unsafeSegment}"`);
+  }
+
+  return normalized;
+}
+
 export function buildItemPath(rootFolder: string, item: FeedItem): string {
+  const safeRootFolder = normalizeRootFolder(rootFolder);
   const dateFolder = dateFolderFromIso(item.createdAt);
   const titleSlug = safeFileName(item.title, 64);
   const suffix = idSuffix(item.id);
 
-  return normalizePath(`${rootFolder}/${dateFolder}/${item.source}-${titleSlug}-${suffix}.md`);
+  return normalizePath(`${safeRootFolder}/${dateFolder}/${item.source}-${titleSlug}-${suffix}.md`);
 }
 
 async function ensureFolder(vault: MinimalVault, folderPath: string): Promise<void> {

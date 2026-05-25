@@ -4,7 +4,7 @@ vi.mock("obsidian", () => ({
   TFolder: class TFolder {}
 }));
 
-import { buildItemPath, writeFeedItem } from "../src/writer";
+import { buildItemPath, normalizeRootFolder, writeFeedItem } from "../src/writer";
 import { renderFeedItemMarkdown } from "../src/markdown";
 import type { FeedItem } from "../src/types";
 
@@ -47,6 +47,12 @@ class FakeVault {
     this.contents.set(path, data);
     return file;
   }
+
+  addFolder(path: string): FakeFolder {
+    const folder = { kind: "folder" as const, path };
+    this.nodes.set(path, folder);
+    return folder;
+  }
 }
 
 const item: FeedItem = {
@@ -70,6 +76,12 @@ describe("buildItemPath", () => {
   it("builds a normalized root/date/source-title-id markdown path", () => {
     expect(buildItemPath("Follow Builders", item)).toBe(
       "Follow Builders/2026-05-24/x-thariq-every-now-and-then-2058377974882210096.md"
+    );
+  });
+
+  it("normalizes root folder whitespace, separators, and trailing slashes", () => {
+    expect(buildItemPath(" Follow Builders\\\\Daily/// ", item)).toBe(
+      "Follow Builders/Daily/2026-05-24/x-thariq-every-now-and-then-2058377974882210096.md"
     );
   });
 });
@@ -132,5 +144,58 @@ describe("writeFeedItem", () => {
     expect(vault.modifiedFiles).toEqual([path]);
     expect(vault.createdFiles).toEqual([]);
     expect(vault.contents.get(path)).toBe(renderFeedItemMarkdown(item, syncedAt));
+  });
+
+  it.each([
+    "../Follow Builders",
+    "/Follow Builders",
+    ".obsidian/Follow Builders",
+    "Follow Builders/./Other",
+    "Follow Builders/../Other",
+    ""
+  ])("rejects unsafe root folder %j", async (rootFolder) => {
+    const vault = new FakeVault();
+
+    expect(() => normalizeRootFolder(rootFolder)).toThrow(/unsafe root folder/i);
+    expect(() => buildItemPath(rootFolder, item)).toThrow(/unsafe root folder/i);
+    await expect(
+      writeFeedItem(vault, rootFolder, item, {
+        overwriteExisting: false,
+        syncedAt: "2026-05-25T03:30:00.000Z"
+      })
+    ).rejects.toThrow(/unsafe root folder/i);
+  });
+
+  it.each(["Follow Builders", "Follow Builders/2026-05-24"])(
+    "throws when a file exists where folder %j is needed",
+    async (conflictPath) => {
+      const vault = new FakeVault();
+      if (conflictPath !== "Follow Builders") {
+        vault.addFolder("Follow Builders");
+      }
+      vault.addFile(conflictPath, "not a folder");
+
+      await expect(
+        writeFeedItem(vault, "Follow Builders", item, {
+          overwriteExisting: false,
+          syncedAt: "2026-05-25T03:30:00.000Z"
+        })
+      ).rejects.toThrow(`Cannot create folder ${conflictPath}: a file exists at that path`);
+    }
+  );
+
+  it("throws when a folder exists at the final markdown path", async () => {
+    const vault = new FakeVault();
+    const path = buildItemPath("Follow Builders", item);
+    vault.addFolder("Follow Builders");
+    vault.addFolder("Follow Builders/2026-05-24");
+    vault.addFolder(path);
+
+    await expect(
+      writeFeedItem(vault, "Follow Builders", item, {
+        overwriteExisting: true,
+        syncedAt: "2026-05-25T03:30:00.000Z"
+      })
+    ).rejects.toThrow(`Cannot write item ${item.id}: a folder exists at ${path}`);
   });
 });
