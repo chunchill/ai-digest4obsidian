@@ -42,6 +42,39 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+function feedWarnings(raw: unknown, label: string): string[] {
+  if (!isRecord(raw)) {
+    return [];
+  }
+
+  return arrayField(raw, "errors").map((error) => `${label} feed warning: ${errorMessage(error)}`);
+}
+
+function hasArrayField(raw: unknown, key: string): raw is Record<string, unknown> {
+  return isRecord(raw) && Array.isArray(raw[key]);
+}
+
+function parseFetchedFeed(
+  label: string,
+  key: string,
+  raw: unknown,
+  parser: (rawFeed: unknown) => FeedItem[]
+): FetchResult {
+  const errors = feedWarnings(raw, label);
+
+  if (!hasArrayField(raw, key)) {
+    return {
+      items: [],
+      errors: [...errors, `${label} feed failed: expected top-level ${key} array`]
+    };
+  }
+
+  return {
+    items: parser(raw),
+    errors
+  };
+}
+
 export function parseXFeed(raw: unknown): FeedItem[] {
   if (!isRecord(raw)) {
     return [];
@@ -185,7 +218,9 @@ export async function fetchEnabledFeeds(options: {
 
   if (options.syncX) {
     try {
-      items.push(...parseXFeed(await fetchJson(FEED_X_URL)));
+      const result = parseFetchedFeed("X", "x", await fetchJson(FEED_X_URL), parseXFeed);
+      items.push(...result.items);
+      errors.push(...result.errors);
     } catch (error) {
       errors.push(`X feed failed: ${errorMessage(error)}`);
     }
@@ -193,7 +228,14 @@ export async function fetchEnabledFeeds(options: {
 
   if (options.syncPodcasts) {
     try {
-      items.push(...parsePodcastFeed(await fetchJson(FEED_PODCASTS_URL)));
+      const result = parseFetchedFeed(
+        "Podcast",
+        "podcasts",
+        await fetchJson(FEED_PODCASTS_URL),
+        parsePodcastFeed
+      );
+      items.push(...result.items);
+      errors.push(...result.errors);
     } catch (error) {
       errors.push(`Podcast feed failed: ${errorMessage(error)}`);
     }
@@ -201,7 +243,9 @@ export async function fetchEnabledFeeds(options: {
 
   if (options.syncBlogs) {
     try {
-      items.push(...parseBlogFeed(await fetchJson(FEED_BLOGS_URL)));
+      const result = parseFetchedFeed("Blog", "blogs", await fetchJson(FEED_BLOGS_URL), parseBlogFeed);
+      items.push(...result.items);
+      errors.push(...result.errors);
     } catch (error) {
       errors.push(`Blog feed failed: ${errorMessage(error)}`);
     }
