@@ -1,6 +1,6 @@
 # Follow Builders Sync 安装与配置指南
 
-本文档用于在本地 Obsidian 仓库中手动安装和测试 `Follow Builders Sync` 插件。
+本文档用于在本地 Obsidian vault 中安装和测试 `Follow Builders Sync` 插件。
 
 ## 功能说明
 
@@ -12,7 +12,34 @@
 
 插件还会生成一份按日期聚合的 deterministic daily digest。它不生成 AI 摘要，不需要 OpenAI API key，也不需要本地安装 `follow-builders` 项目。
 
-## 构建插件
+## 从 Release 包安装
+
+下载 release zip，解压后在解压目录中运行：
+
+```bash
+bash install-to-vault.sh "/path/to/your/vault"
+```
+
+安装脚本会把插件文件复制到：
+
+```text
+/path/to/your/vault/.obsidian/plugins/follow-builders-sync/
+```
+
+release 包包含：
+
+```text
+manifest.json
+main.js
+install-to-vault.sh
+README.md
+docs/INSTALL.en.md
+docs/INSTALL.zh-CN.md
+```
+
+如果后续版本加入 `styles.css`，安装脚本会在文件存在时自动复制。
+
+## 从源码构建
 
 在本项目目录运行：
 
@@ -29,6 +56,14 @@ main.js
 ```
 
 当前插件没有 `styles.css`，所以不需要复制样式文件。
+
+## 从源码运行安装脚本
+
+源码构建完成后运行：
+
+```bash
+bash scripts/install-to-vault.sh "/path/to/your/vault"
+```
 
 ## 手动安装到 Obsidian
 
@@ -47,14 +82,6 @@ mkdir -p "/path/to/your/vault/.obsidian/plugins/follow-builders-sync"
 复制插件文件：
 
 ```bash
-cp manifest.json main.js "/path/to/your/vault/.obsidian/plugins/follow-builders-sync/"
-```
-
-如果你在本仓库的隔离工作区中测试，命令示例为：
-
-```bash
-cd /Users/jasper.qiu/Projects/ai-labs/ai-digest4obsidian/.worktrees/follow-builders-sync
-mkdir -p "/path/to/your/vault/.obsidian/plugins/follow-builders-sync"
 cp manifest.json main.js "/path/to/your/vault/.obsidian/plugins/follow-builders-sync/"
 ```
 
@@ -136,18 +163,35 @@ https://raw.githubusercontent.com/zarazhangrui/follow-builders/main/feed-blogs.j
 
 ## 更新插件
 
-重新构建并复制文件：
+如果使用 release 包，解压新版本后重新运行：
+
+```bash
+bash install-to-vault.sh "/path/to/your/vault"
+```
+
+如果使用源码安装，重新构建并运行源码安装脚本：
 
 ```bash
 npm run build
-cp manifest.json main.js "/path/to/your/vault/.obsidian/plugins/follow-builders-sync/"
+bash scripts/install-to-vault.sh "/path/to/your/vault"
 ```
 
 然后在 Obsidian 中重新加载插件，或重启 Obsidian。
 
+## 构建 Release 包
+
+维护者可以用下面的命令生成用于发布的 zip：
+
+```bash
+npm run package
+```
+
+生成的文件会写入 `dist/`，并包含位于 zip 根目录的 `install-to-vault.sh` 安装脚本。
+
 ## 故障排查
 
 - 插件没有出现在列表中：确认复制了 `manifest.json` 和 `main.js`，且插件目录名是 `follow-builders-sync`。
+- 安装脚本提示 `Vault directory does not exist`：请传入 vault 根目录，不是 `.obsidian` 目录。
 - 点击同步后没有文件：确认目标 folder 配置有效，并检查同步 Notice 是否显示 feed 访问失败。
 - 重复同步没有新增文件：这是正常行为，插件会跳过已同步内容。
 - 想重新导入：点击 `Clear sync history`，必要时删除已生成的 Markdown 文件，再重新同步。

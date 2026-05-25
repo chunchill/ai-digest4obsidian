@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node esbuild.config.mjs --watch",
     "build": "tsc --noEmit --skipLibCheck && node esbuild.config.mjs production",
+    "package": "bash scripts/package-release.sh",
     "test": "vitest run",
     "test:watch": "vitest"
   },

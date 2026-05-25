@@ -30,6 +30,20 @@ Follow Builders/
 
 The `Write daily digest` setting controls the `Daily/YYYY-MM-DD.md` output.
 
+## Install from a Release Package
+
+Download and unzip the release package, then run:
+
+```bash
+bash install-to-vault.sh "/path/to/your/obsidian/vault"
+```
+
+The script installs `manifest.json`, `main.js`, and optional `styles.css` into:
+
+```text
+/path/to/your/obsidian/vault/.obsidian/plugins/follow-builders-sync/
+```
+
 ## Development
 
 Install dependencies:
@@ -48,4 +62,10 @@ Build:
 
 ```bash
 npm run build
+```
+
+Create a release zip:
+
+```bash
+npm run package
 ```
