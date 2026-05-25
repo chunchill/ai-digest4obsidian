@@ -51,6 +51,20 @@ describe("renderFeedItemMarkdown", () => {
     expect(markdown).not.toContain("title: \"Builder\n---");
   });
 
+  it("escapes DEL and C1 control characters in frontmatter strings", () => {
+    const markdown = renderFeedItemMarkdown(
+      { ...item, title: "Builder\u007f\u0085\u009fship it" },
+      "2026-05-25T03:30:00.000Z"
+    );
+
+    expect(markdown).toContain("\\u007f");
+    expect(markdown).toContain("\\u0085");
+    expect(markdown).toContain("\\u009f");
+    expect(markdown).not.toContain("\u007f");
+    expect(markdown).not.toContain("\u0085");
+    expect(markdown).not.toContain("\u009f");
+  });
+
   it("renders multiline titles as a single-line heading", () => {
     const markdown = renderFeedItemMarkdown(
       { ...item, title: "Builder\nships" },

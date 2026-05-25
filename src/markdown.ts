@@ -1,7 +1,9 @@
 import type { FeedItem } from "./types";
 
 function yamlString(value: string): string {
-  return JSON.stringify(value);
+  return JSON.stringify(value).replace(/[\u007F-\u009F]/g, (char) =>
+    `\\u${char.charCodeAt(0).toString(16).padStart(4, "0")}`
+  );
 }
 
 function labelForMetadataKey(key: string): string {
@@ -11,7 +13,7 @@ function labelForMetadataKey(key: string): string {
 }
 
 function singleLineText(value: string): string {
-  return value.replace(/[\u0000-\u001F\u007F\s]+/g, " ").trim();
+  return value.replace(/[\u0000-\u001F\u007F-\u009F\s]+/g, " ").trim();
 }
 
 function sourceUrl(value: string): string {
