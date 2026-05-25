@@ -98,6 +98,11 @@ export function buildItemPath(rootFolder: string, item: FeedItem): string {
   return normalizePath(`${safeRootFolder}/${dateFolder}/${item.source}-${titleSlug}-${suffix}.md`);
 }
 
+export function buildDailyDigestPath(rootFolder: string, date: string): string {
+  const safeRootFolder = normalizeRootFolder(rootFolder);
+  return normalizePath(`${safeRootFolder}/Daily/${date}.md`);
+}
+
 async function ensureFolder(vault: MinimalVault, folderPath: string): Promise<void> {
   const normalizedPath = normalizePath(folderPath);
   const parts = normalizedPath.split("/").filter((part) => part.length > 0);
@@ -125,15 +130,33 @@ export async function writeFeedItem(
   options: WriteOptions
 ): Promise<WriteResult> {
   const path = buildItemPath(rootFolder, item);
+  const markdown = renderFeedItemMarkdown(item, options.syncedAt);
+
+  try {
+    return await writeMarkdownFile(vault, path, markdown, {
+      overwriteExisting: options.overwriteExisting
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === `Cannot write markdown: a folder exists at ${path}`) {
+      throw new Error(`Cannot write item ${item.id}: a folder exists at ${path}`);
+    }
+    throw error;
+  }
+}
+
+export async function writeMarkdownFile(
+  vault: MinimalVault,
+  path: string,
+  markdown: string,
+  options: { overwriteExisting: boolean }
+): Promise<WriteResult> {
   const folderPath = path.split("/").slice(0, -1).join("/");
   await ensureFolder(vault, folderPath);
 
-  const markdown = renderFeedItemMarkdown(item, options.syncedAt);
   const existing = vault.getAbstractFileByPath(path);
-
   if (existing) {
     if (!isFile(existing)) {
-      throw new Error(`Cannot write item ${item.id}: a folder exists at ${path}`);
+      throw new Error(`Cannot write markdown: a folder exists at ${path}`);
     }
 
     if (!options.overwriteExisting) {
@@ -146,4 +169,14 @@ export async function writeFeedItem(
 
   await vault.create(path, markdown);
   return { status: "created", path };
+}
+
+export async function writeDailyDigest(
+  vault: MinimalVault,
+  rootFolder: string,
+  date: string,
+  markdown: string
+): Promise<WriteResult> {
+  const path = buildDailyDigestPath(rootFolder, date);
+  return writeMarkdownFile(vault, path, markdown, { overwriteExisting: true });
 }
