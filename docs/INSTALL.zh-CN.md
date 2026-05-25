@@ -10,7 +10,7 @@
 - Podcast episodes
 - Blog posts
 
-插件不生成 AI 摘要，不需要 OpenAI API key，也不需要本地安装 `follow-builders` 项目。
+插件还会生成一份按日期聚合的 deterministic daily digest。它不生成 AI 摘要，不需要 OpenAI API key，也不需要本地安装 `follow-builders` 项目。
 
 ## 构建插件
 
@@ -83,6 +83,7 @@ follow-builders-sync
 - `Sync X posts`：是否同步 X/Twitter 内容。
 - `Sync podcasts`：是否同步播客内容。
 - `Sync blogs`：是否同步博客内容。
+- `Write daily digest`：为每个同步日期创建或更新一份 `Daily/YYYY-MM-DD.md` 聚合笔记。默认开启。
 - `Overwrite existing files`：是否覆盖已有 Markdown 文件。默认关闭。
 - `Clear sync history`：清除已同步 ID 记录。不会删除已经写入的 Markdown 文件。
 
@@ -103,11 +104,15 @@ follow-builders-sync
 
 ```text
 Follow Builders/
+  Daily/
+    2026-05-25.md
   2026-05-25/
     x-example-123.md
     podcast-example-title.md
     blog-example-title.md
 ```
+
+`Daily/2026-05-25.md` 是当天内容的聚合笔记；如果当天有对应内容，会包含 podcasts、X/Twitter、blogs 等分区。它只基于中央 feed 中已抓取的字段进行确定性整理，不是 AI 生成摘要。
 
 每条内容会生成一个 Markdown 文件，包含：
 

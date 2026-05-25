@@ -10,7 +10,7 @@ The plugin syncs raw public Follow Builders feed items into Obsidian:
 - Podcast episodes
 - Blog posts
 
-It does not generate AI summaries, does not require an OpenAI API key, and does not require a local `follow-builders` checkout.
+It also creates a deterministic daily digest note that groups the day's synced items. It does not generate AI summaries, does not require an OpenAI API key, and does not require a local `follow-builders` checkout.
 
 ## Build the Plugin
 
@@ -83,6 +83,7 @@ Available settings:
 - `Sync X posts`: Sync X/Twitter items.
 - `Sync podcasts`: Sync podcast items.
 - `Sync blogs`: Sync blog items.
+- `Write daily digest`: Create or update one `Daily/YYYY-MM-DD.md` digest note for each synced day. Enabled by default.
 - `Overwrite existing files`: Rewrite existing Markdown files. Disabled by default.
 - `Clear sync history`: Clear remembered synced IDs. This does not delete existing Markdown files.
 
@@ -103,11 +104,15 @@ Default output:
 
 ```text
 Follow Builders/
+  Daily/
+    2026-05-25.md
   2026-05-25/
     x-example-123.md
     podcast-example-title.md
     blog-example-title.md
 ```
+
+The `Daily/2026-05-25.md` file is a date-level aggregation with sections for podcasts, X/Twitter, and blogs when those sources have content. It is deterministic and based only on the fetched feed fields; it is not an AI-generated summary.
 
 Each item becomes one Markdown file containing:
 
