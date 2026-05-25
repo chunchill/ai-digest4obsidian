@@ -11,7 +11,8 @@ const settings: FollowBuildersSettings = {
   syncX: true,
   syncPodcasts: true,
   syncBlogs: true,
-  overwriteExisting: false
+  overwriteExisting: false,
+  writeDailyDigest: true
 };
 
 const nowIso = "2026-05-25T03:30:00.000Z";
@@ -57,6 +58,10 @@ describe("runSync", () => {
       updated: 0,
       skipped: 0,
       failed: 0,
+      digestCreated: 0,
+      digestUpdated: 0,
+      digestSkipped: 0,
+      digestFailed: 0,
       errors: []
     });
     expect(writeItem).toHaveBeenCalledWith(item, nowIso);
@@ -98,6 +103,10 @@ describe("runSync", () => {
       updated: 0,
       skipped: 0,
       failed: 0,
+      digestCreated: 0,
+      digestUpdated: 0,
+      digestSkipped: 0,
+      digestFailed: 0,
       errors: ["X feed failed: network down"]
     });
     expect(state.syncedIds[item.id]).toBe(true);
@@ -141,5 +150,28 @@ describe("runSync", () => {
     expect(result.created).toBe(1);
     expect(result.skipped).toBe(2);
     expect(state.syncedIds[item.id]).toBe(true);
+  });
+
+  it("regenerates daily digests from fetched items even when raw items are already synced", async () => {
+    const state: FollowBuildersSyncState = { syncedIds: { [item.id]: true } };
+    const writeItem = vi.fn();
+    const writeDigest = vi.fn().mockResolvedValue({
+      status: "updated",
+      path: "Follow Builders/Daily/2026-05-24.md"
+    });
+
+    const result = await runSync({
+      settings: { ...settings, writeDailyDigest: true },
+      state,
+      fetchFeeds: async () => ({ items: [item], skipped: 0, errors: [] }),
+      writeItem,
+      writeDigest,
+      now: syncedNow
+    });
+
+    expect(writeItem).not.toHaveBeenCalled();
+    expect(writeDigest).toHaveBeenCalledWith("2026-05-24", [item], nowIso);
+    expect(result.digestUpdated).toBe(1);
+    expect(result.skipped).toBe(1);
   });
 });

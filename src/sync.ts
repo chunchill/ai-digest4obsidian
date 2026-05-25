@@ -1,4 +1,5 @@
 import { fetchEnabledFeeds } from "./feeds";
+import { groupItemsByDate } from "./digest";
 import type {
   FeedItem,
   FetchResult,
@@ -13,6 +14,7 @@ export interface RunSyncDependencies {
   state: FollowBuildersSyncState;
   fetchFeeds?: (options: FollowBuildersSettings) => Promise<FetchResult>;
   writeItem: (item: FeedItem, syncedAt: string) => Promise<WriteResult>;
+  writeDigest?: (date: string, items: FeedItem[], generatedAt: string) => Promise<WriteResult>;
   now?: () => Date;
 }
 
@@ -24,11 +26,22 @@ function countWrite(result: SyncResult, status: WriteResult["status"]): void {
   result[status] += 1;
 }
 
+function countDigestWrite(result: SyncResult, status: WriteResult["status"]): void {
+  if (status === "created") {
+    result.digestCreated += 1;
+  } else if (status === "updated") {
+    result.digestUpdated += 1;
+  } else {
+    result.digestSkipped += 1;
+  }
+}
+
 export async function runSync({
   settings,
   state,
   fetchFeeds = fetchEnabledFeeds,
   writeItem,
+  writeDigest,
   now = () => new Date()
 }: RunSyncDependencies): Promise<SyncResult> {
   const syncedAt = now().toISOString();
@@ -37,6 +50,10 @@ export async function runSync({
     updated: 0,
     skipped: 0,
     failed: 0,
+    digestCreated: 0,
+    digestUpdated: 0,
+    digestSkipped: 0,
+    digestFailed: 0,
     errors: []
   };
 
@@ -57,6 +74,18 @@ export async function runSync({
     } catch (error) {
       result.failed += 1;
       result.errors.push(`Failed to write ${item.id}: ${errorMessage(error)}`);
+    }
+  }
+
+  if (settings.writeDailyDigest && writeDigest) {
+    for (const [date, items] of groupItemsByDate(fetched.items)) {
+      try {
+        const writeResult = await writeDigest(date, items, syncedAt);
+        countDigestWrite(result, writeResult.status);
+      } catch (error) {
+        result.digestFailed += 1;
+        result.errors.push(`Failed to write digest ${date}: ${errorMessage(error)}`);
+      }
     }
   }
 
