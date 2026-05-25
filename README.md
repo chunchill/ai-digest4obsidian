@@ -1,6 +1,6 @@
 # Follow Builders Sync for Obsidian
 
-An Obsidian plugin that syncs public Follow Builders feed items into Markdown notes and writes a deterministic daily digest.
+An Obsidian plugin that syncs public Follow Builders feed items into deterministic daily digest notes.
 
 ## What it syncs
 
@@ -8,7 +8,7 @@ An Obsidian plugin that syncs public Follow Builders feed items into Markdown no
 - Podcast episodes from the central Follow Builders feed
 - Blog posts from the central Follow Builders feed
 
-The plugin does not generate AI summaries and does not require API keys. The daily digest is a local, deterministic aggregation of the synced feed content.
+The plugin does not generate AI summaries and does not require API keys. The digest is a local, deterministic aggregation of the synced feed content.
 
 ## Usage
 
@@ -16,19 +16,15 @@ The plugin does not generate AI summaries and does not require API keys. The dai
 2. Open plugin settings and choose a target folder. The default is `Follow Builders`.
 3. Click the ribbon sync icon or run `Sync Follow Builders feeds` from the command palette.
 
-By default, sync writes one daily digest plus one Markdown file per feed item:
+Sync writes one date-named digest note directly under the target folder:
 
 ```text
 Follow Builders/
-  Daily/
-    2026-05-25.md
-  2026-05-25/
-    x-example-123.md
-    podcast-example-title.md
-    blog-example-title.md
+  2026-05-25.md
+  2026-05-26.md
 ```
 
-The `Write daily digest` setting controls the `Daily/YYYY-MM-DD.md` output.
+The plugin does not write separate raw feed item notes into the vault.
 
 ## Install from a Release Package
 

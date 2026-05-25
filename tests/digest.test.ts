@@ -54,8 +54,8 @@ describe("daily digest", () => {
     expect(groups.get("2026-05-25")).toEqual([podcast]);
   });
 
-  it("builds the date-named digest path under Daily", () => {
-    expect(buildDailyDigestPath("Follow Builders", "2026-05-25")).toBe("Follow Builders/Daily/2026-05-25.md");
+  it("builds the date-named digest path directly under the root folder", () => {
+    expect(buildDailyDigestPath("Follow Builders", "2026-05-25")).toBe("Follow Builders/2026-05-25.md");
   });
 
   it("renders digest sections in upstream sample order", () => {

@@ -4,13 +4,13 @@
 
 ## 功能说明
 
-这个插件会从 Follow Builders 的公开中央 feed 同步原始内容到 Obsidian：
+这个插件会从 Follow Builders 的公开中央 feed 同步内容，并在 Obsidian 中生成按日期命名的 digest 笔记：
 
 - X/Twitter builder posts
 - Podcast episodes
 - Blog posts
 
-插件还会生成一份按日期聚合的 deterministic daily digest。它不生成 AI 摘要，不需要 OpenAI API key，也不需要本地安装 `follow-builders` 项目。
+每份 digest 会聚合当天抓取到的内容。插件不生成 AI 摘要，不需要 OpenAI API key，也不需要本地安装 `follow-builders` 项目。
 
 ## 从 Release 包安装
 
@@ -110,9 +110,6 @@ follow-builders-sync
 - `Sync X posts`：是否同步 X/Twitter 内容。
 - `Sync podcasts`：是否同步播客内容。
 - `Sync blogs`：是否同步博客内容。
-- `Write daily digest`：为每个同步日期创建或更新一份 `Daily/YYYY-MM-DD.md` 聚合笔记。默认开启。
-- `Overwrite existing files`：是否覆盖已有 Markdown 文件。默认关闭。
-- `Clear sync history`：清除已同步 ID 记录。不会删除已经写入的 Markdown 文件。
 
 建议首次测试保持默认配置。
 
@@ -123,7 +120,7 @@ follow-builders-sync
 1. 点击 Obsidian 左侧 Ribbon 中的同步图标。
 2. 打开命令面板，运行 `Sync Follow Builders feeds`。
 
-首次同步会导入当前中央 feed 中可见的所有内容。后续同步会根据已同步 ID 和已有文件跳过重复内容。
+每次同步都会读取当前中央 feed 中可见的内容，并为本次 fetch 中出现的日期创建或更新 digest 笔记。
 
 ## 输出目录结构
 
@@ -131,23 +128,19 @@ follow-builders-sync
 
 ```text
 Follow Builders/
-  Daily/
-    2026-05-25.md
-  2026-05-25/
-    x-example-123.md
-    podcast-example-title.md
-    blog-example-title.md
+  2026-05-25.md
+  2026-05-26.md
 ```
 
-`Daily/2026-05-25.md` 是当天内容的聚合笔记；如果当天有对应内容，会包含 podcasts、X/Twitter、blogs 等分区。它只基于中央 feed 中已抓取的字段进行确定性整理，不是 AI 生成摘要。
+每个 `YYYY-MM-DD.md` 文件都是当天内容的聚合笔记；如果当天有对应内容，会包含 podcasts、X/Twitter、blogs 等分区。它只基于中央 feed 中已抓取的字段进行确定性整理，不是 AI 生成摘要。
 
-每条内容会生成一个 Markdown 文件，包含：
+每份 digest 笔记包含：
 
 - frontmatter
-- 原始链接
-- 作者或来源
-- 原始正文或可用标题
-- 可用 metadata
+- 来源分区
+- 来源名或作者
+- 基于已抓取内容的摘录
+- 每条内容的原始链接
 
 ## 网络要求
 
@@ -193,5 +186,5 @@ npm run package
 - 插件没有出现在列表中：确认复制了 `manifest.json` 和 `main.js`，且插件目录名是 `follow-builders-sync`。
 - 安装脚本提示 `Vault directory does not exist`：请传入 vault 根目录，不是 `.obsidian` 目录。
 - 点击同步后没有文件：确认目标 folder 配置有效，并检查同步 Notice 是否显示 feed 访问失败。
-- 重复同步没有新增文件：这是正常行为，插件会跳过已同步内容。
-- 想重新导入：点击 `Clear sync history`，必要时删除已生成的 Markdown 文件，再重新同步。
+- 重复同步没有新增日期文件：这是正常行为；如果 feed 中仍是相同日期，已有 digest 笔记会被更新。
+- 想重新生成：删除已生成的 digest Markdown 文件，再重新同步。

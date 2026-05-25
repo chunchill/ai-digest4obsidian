@@ -3,7 +3,7 @@
   "name": "Follow Builders Sync",
   "version": "0.1.0",
   "minAppVersion": "1.5.0",
-  "description": "Sync raw Follow Builders central feed items into date-based Markdown notes.",
+  "description": "Sync Follow Builders central feeds into date-based digest notes.",
   "author": "",
   "authorUrl": "",
   "isDesktopOnly": false

@@ -41,49 +41,56 @@ function writeResult(status: WriteResult["status"], path = "Follow Builders/item
 }
 
 describe("runSync", () => {
-  it("writes new items and records synced ids", async () => {
+  it("writes daily digests without writing raw feed item notes", async () => {
     const state: FollowBuildersSyncState = { syncedIds: {} };
-    const writeItem = vi.fn().mockResolvedValue(writeResult("created"));
+    const writeItem = vi.fn();
+    const writeDigest = vi.fn().mockResolvedValue(writeResult("created", "Follow Builders/2026-05-24.md"));
 
     const result = await runSync({
       settings,
       state,
       fetchFeeds: async () => ({ items: [item], skipped: 0, errors: [] }),
       writeItem,
+      writeDigest,
       now: syncedNow
     });
 
     expect(result).toEqual({
-      created: 1,
+      created: 0,
       updated: 0,
       skipped: 0,
       failed: 0,
-      digestCreated: 0,
+      digestCreated: 1,
       digestUpdated: 0,
       digestSkipped: 0,
       digestFailed: 0,
       errors: []
     });
-    expect(writeItem).toHaveBeenCalledWith(item, nowIso);
-    expect(state.syncedIds[item.id]).toBe(true);
+    expect(writeItem).not.toHaveBeenCalled();
+    expect(writeDigest).toHaveBeenCalledWith("2026-05-24", [item], nowIso);
+    expect(state.syncedIds[item.id]).toBeUndefined();
     expect(state.lastSyncedAt).toBe(nowIso);
   });
 
-  it("skips items already in sync state when overwriteExisting is false", async () => {
+  it("ignores raw sync history and still writes digest notes", async () => {
     const state: FollowBuildersSyncState = { syncedIds: { [item.id]: true } };
     const writeItem = vi.fn();
+    const writeDigest = vi.fn().mockResolvedValue(writeResult("updated", "Follow Builders/2026-05-24.md"));
 
     const result = await runSync({
       settings: { ...settings, overwriteExisting: false },
       state,
       fetchFeeds: async () => ({ items: [item], skipped: 0, errors: [] }),
       writeItem,
+      writeDigest,
       now: syncedNow
     });
 
-    expect(result.skipped).toBe(1);
+    expect(result.skipped).toBe(0);
     expect(result.created).toBe(0);
+    expect(result.digestUpdated).toBe(1);
     expect(writeItem).not.toHaveBeenCalled();
+    expect(writeDigest).toHaveBeenCalledWith("2026-05-24", [item], nowIso);
     expect(state.lastSyncedAt).toBe(nowIso);
   });
 
@@ -94,45 +101,42 @@ describe("runSync", () => {
       settings,
       state,
       fetchFeeds: async () => ({ items: [item], skipped: 0, errors: ["X feed failed: network down"] }),
-      writeItem: async () => writeResult("created"),
+      writeItem: vi.fn(),
+      writeDigest: async () => writeResult("created", "Follow Builders/2026-05-24.md"),
       now: syncedNow
     });
 
     expect(result).toEqual({
-      created: 1,
+      created: 0,
       updated: 0,
       skipped: 0,
       failed: 0,
-      digestCreated: 0,
+      digestCreated: 1,
       digestUpdated: 0,
       digestSkipped: 0,
       digestFailed: 0,
       errors: ["X feed failed: network down"]
     });
-    expect(state.syncedIds[item.id]).toBe(true);
+    expect(state.syncedIds[item.id]).toBeUndefined();
   });
 
-  it("counts write failures and continues without marking failed ids synced", async () => {
-    const failedItem = { ...item, id: "x:failed" };
-    const successfulItem = { ...item, id: "x:successful" };
+  it("counts digest write failures without marking raw ids synced", async () => {
     const state: FollowBuildersSyncState = { syncedIds: {} };
 
     const result = await runSync({
       settings,
       state,
-      fetchFeeds: async () => ({ items: [failedItem, successfulItem], skipped: 0, errors: [] }),
-      writeItem: vi
-        .fn()
-        .mockRejectedValueOnce(new Error("vault unavailable"))
-        .mockResolvedValueOnce(writeResult("created")),
+      fetchFeeds: async () => ({ items: [item], skipped: 0, errors: [] }),
+      writeItem: vi.fn(),
+      writeDigest: vi.fn().mockRejectedValueOnce(new Error("vault unavailable")),
       now: syncedNow
     });
 
-    expect(result.created).toBe(1);
-    expect(result.failed).toBe(1);
-    expect(result.errors).toEqual(["Failed to write x:failed: vault unavailable"]);
-    expect(state.syncedIds[failedItem.id]).toBeUndefined();
-    expect(state.syncedIds[successfulItem.id]).toBe(true);
+    expect(result.created).toBe(0);
+    expect(result.failed).toBe(0);
+    expect(result.digestFailed).toBe(1);
+    expect(result.errors).toEqual(["Failed to write digest 2026-05-24: vault unavailable"]);
+    expect(state.syncedIds[item.id]).toBeUndefined();
     expect(state.lastSyncedAt).toBe(nowIso);
   });
 
@@ -143,13 +147,15 @@ describe("runSync", () => {
       settings,
       state,
       fetchFeeds: async () => ({ items: [item], skipped: 2, errors: [] }),
-      writeItem: async () => writeResult("created"),
+      writeItem: vi.fn(),
+      writeDigest: async () => writeResult("created", "Follow Builders/2026-05-24.md"),
       now: syncedNow
     });
 
-    expect(result.created).toBe(1);
+    expect(result.created).toBe(0);
+    expect(result.digestCreated).toBe(1);
     expect(result.skipped).toBe(2);
-    expect(state.syncedIds[item.id]).toBe(true);
+    expect(state.syncedIds[item.id]).toBeUndefined();
   });
 
   it("regenerates daily digests from fetched items even when raw items are already synced", async () => {
@@ -157,7 +163,7 @@ describe("runSync", () => {
     const writeItem = vi.fn();
     const writeDigest = vi.fn().mockResolvedValue({
       status: "updated",
-      path: "Follow Builders/Daily/2026-05-24.md"
+      path: "Follow Builders/2026-05-24.md"
     });
 
     const result = await runSync({
@@ -172,6 +178,6 @@ describe("runSync", () => {
     expect(writeItem).not.toHaveBeenCalled();
     expect(writeDigest).toHaveBeenCalledWith("2026-05-24", [item], nowIso);
     expect(result.digestUpdated).toBe(1);
-    expect(result.skipped).toBe(1);
+    expect(result.skipped).toBe(0);
   });
 });

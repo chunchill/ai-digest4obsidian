@@ -82,8 +82,7 @@ vi.mock("../src/sync", () => ({
 }));
 
 vi.mock("../src/writer", () => ({
-  writeDailyDigest: vi.fn(),
-  writeFeedItem: vi.fn()
+  writeDailyDigest: vi.fn()
 }));
 
 vi.mock("../src/digest", () => ({
@@ -132,7 +131,7 @@ describe("FollowBuildersSyncPlugin", () => {
       syncX: false,
       syncBlogs: false,
       overwriteExisting: true,
-      writeDailyDigest: false
+      writeDailyDigest: true
     });
     expect(plugin.state).toEqual({ syncedIds: {} });
     expect(plugin.ribbonIcons).toHaveLength(1);
@@ -162,7 +161,6 @@ describe("FollowBuildersSyncPlugin", () => {
       expect.objectContaining({
         settings: plugin.settings,
         state: plugin.state,
-        writeItem: expect.any(Function),
         writeDigest: expect.any(Function)
       })
     );
@@ -171,7 +169,7 @@ describe("FollowBuildersSyncPlugin", () => {
       state: plugin.state
     });
     expect(notices).toContain(
-      "Follow Builders sync complete: 1 created, 2 updated, 3 skipped, 0 failed, 0 digest created, 1 digest updated, 0 digest skipped, 0 digest failed, 1 warning."
+      "Follow Builders sync complete: 0 digest created, 1 digest updated, 0 digest skipped, 0 digest failed, 1 warning."
     );
   });
 
@@ -225,7 +223,7 @@ describe("FollowBuildersSyncPlugin", () => {
     await syncPromise;
 
     expect(notices).toContain(
-      "Follow Builders sync complete: 0 created, 0 updated, 0 skipped, 1 failed, 0 digest created, 0 digest updated, 0 digest skipped, 0 digest failed, 0 warnings."
+      "Follow Builders sync complete: 0 digest created, 0 digest updated, 0 digest skipped, 0 digest failed, 0 warnings."
     );
     expect(plugin.isSyncing()).toBe(false);
   });

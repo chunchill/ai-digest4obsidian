@@ -1,7 +1,7 @@
 {
   "name": "ai-digest4obsidian",
   "version": "0.1.0",
-  "description": "Obsidian plugin for syncing Follow Builders central feeds into Markdown notes.",
+  "description": "Obsidian plugin for syncing Follow Builders central feeds into date-based digest notes.",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs --watch",

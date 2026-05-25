@@ -56,37 +56,7 @@ export class FollowBuildersSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("Write daily digest")
-      .setDesc("Create or update one date-named digest note under Daily for each synced day.")
-      .addToggle((toggle) =>
-        toggle.setValue(this.plugin.settings.writeDailyDigest).onChange(async (value) => {
-          this.plugin.settings.writeDailyDigest = value;
-          await this.plugin.savePluginData();
-        })
-      );
-
-    new Setting(containerEl)
-      .setName("Overwrite existing files")
-      .setDesc("When enabled, sync rewrites an existing note for the same feed item.")
-      .addToggle((toggle) =>
-        toggle.setValue(this.plugin.settings.overwriteExisting).onChange(async (value) => {
-          this.plugin.settings.overwriteExisting = value;
-          await this.plugin.savePluginData();
-        })
-      );
-
-    new Setting(containerEl)
-      .setName("Clear sync history")
-      .setDesc("Clears remembered feed item IDs. Existing Markdown files are not deleted.")
-      .addButton((button) =>
-        button
-          .setWarning()
-          .setButtonText("Clear history")
-          .setDisabled(this.plugin.isSyncing())
-          .onClick(async () => {
-            await this.plugin.clearSyncHistory();
-            this.display();
-          })
-      );
+      .setName("Digest output")
+      .setDesc("Sync writes date-named digest notes directly in the target folder.");
   }
 }

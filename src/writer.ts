@@ -100,7 +100,7 @@ export function buildItemPath(rootFolder: string, item: FeedItem): string {
 
 export function buildDailyDigestPath(rootFolder: string, date: string): string {
   const safeRootFolder = normalizeRootFolder(rootFolder);
-  return normalizePath(`${safeRootFolder}/Daily/${date}.md`);
+  return normalizePath(`${safeRootFolder}/${date}.md`);
 }
 
 async function ensureFolder(vault: MinimalVault, folderPath: string): Promise<void> {

@@ -8,7 +8,7 @@ import {
   type FollowBuildersSettings,
   type FollowBuildersSyncState
 } from "./types";
-import { writeDailyDigest, writeFeedItem } from "./writer";
+import { writeDailyDigest } from "./writer";
 
 type SavedPluginData = {
   settings?: Partial<FollowBuildersSettings>;
@@ -41,10 +41,6 @@ function partialSettings(value: unknown): Partial<FollowBuildersSettings> {
   if (typeof value.overwriteExisting === "boolean") {
     settings.overwriteExisting = value.overwriteExisting;
   }
-  if (typeof value.writeDailyDigest === "boolean") {
-    settings.writeDailyDigest = value.writeDailyDigest;
-  }
-
   return settings;
 }
 
@@ -151,11 +147,6 @@ export default class FollowBuildersSyncPlugin extends Plugin {
       const result = await runSync({
         settings: runSettings,
         state: runState,
-        writeItem: (item, syncedAt) =>
-          writeFeedItem(this.app.vault, runSettings.targetFolder, item, {
-            overwriteExisting: runSettings.overwriteExisting,
-            syncedAt
-          }),
         writeDigest: (date, items, generatedAt) =>
           writeDailyDigest(
             this.app.vault,
@@ -167,9 +158,9 @@ export default class FollowBuildersSyncPlugin extends Plugin {
       this.state = runState;
       await this.savePluginData();
 
-      const warningCount = Math.max(0, result.errors.length - result.failed);
+      const warningCount = Math.max(0, result.errors.length - result.failed - result.digestFailed);
       new Notice(
-        `Follow Builders sync complete: ${result.created} created, ${result.updated} updated, ${result.skipped} skipped, ${result.failed} failed, ${result.digestCreated} digest created, ${result.digestUpdated} digest updated, ${result.digestSkipped} digest skipped, ${result.digestFailed} digest failed, ${warningCount} ${warningLabel(warningCount)}.`
+        `Follow Builders sync complete: ${result.digestCreated} digest created, ${result.digestUpdated} digest updated, ${result.digestSkipped} digest skipped, ${result.digestFailed} digest failed, ${warningCount} ${warningLabel(warningCount)}.`
       );
     } catch (error) {
       new Notice(`Follow Builders sync failed: ${errorMessage(error)}`);

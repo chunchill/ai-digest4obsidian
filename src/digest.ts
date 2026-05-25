@@ -45,7 +45,7 @@ export function groupItemsByDate(items: FeedItem[]): Map<string, FeedItem[]> {
 }
 
 export function buildDailyDigestPath(rootFolder: string, date: string): string {
-  return normalizePath(`${normalizeRootFolder(rootFolder)}/Daily/${date}.md`);
+  return normalizePath(`${normalizeRootFolder(rootFolder)}/${date}.md`);
 }
 
 export function renderDailyDigestMarkdown(date: string, items: FeedItem[], generatedAt: string): string {

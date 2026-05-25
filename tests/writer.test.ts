@@ -203,22 +203,21 @@ describe("writeFeedItem", () => {
 });
 
 describe("writeDailyDigest", () => {
-  it("creates the Daily folder and writes a daily digest file", async () => {
+  it("writes a date-named daily digest file directly under the root folder", async () => {
     const vault = new FakeVault();
 
     const result = await writeDailyDigest(vault, "Follow Builders", "2026-05-25", "# Digest\n");
 
-    expect(result).toEqual({ status: "created", path: "Follow Builders/Daily/2026-05-25.md" });
-    expect(vault.createdFolders).toEqual(["Follow Builders", "Follow Builders/Daily"]);
-    expect(vault.createdFiles).toEqual(["Follow Builders/Daily/2026-05-25.md"]);
-    expect(vault.contents.get("Follow Builders/Daily/2026-05-25.md")).toBe("# Digest\n");
+    expect(result).toEqual({ status: "created", path: "Follow Builders/2026-05-25.md" });
+    expect(vault.createdFolders).toEqual(["Follow Builders"]);
+    expect(vault.createdFiles).toEqual(["Follow Builders/2026-05-25.md"]);
+    expect(vault.contents.get("Follow Builders/2026-05-25.md")).toBe("# Digest\n");
   });
 
   it("updates an existing daily digest file on rerun", async () => {
     const vault = new FakeVault();
     vault.addFolder("Follow Builders");
-    vault.addFolder("Follow Builders/Daily");
-    const file = vault.addFile("Follow Builders/Daily/2026-05-25.md", "old");
+    const file = vault.addFile("Follow Builders/2026-05-25.md", "old");
 
     const result = await writeDailyDigest(vault, "Follow Builders", "2026-05-25", "new");
 

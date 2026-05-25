@@ -4,13 +4,13 @@ This guide explains how to install and test `Follow Builders Sync` in a local Ob
 
 ## What It Does
 
-The plugin syncs raw public Follow Builders feed items into Obsidian:
+The plugin syncs public Follow Builders feed items into date-named digest notes in Obsidian:
 
 - X/Twitter builder posts
 - Podcast episodes
 - Blog posts
 
-It also creates a deterministic daily digest note that groups the day's synced items. It does not generate AI summaries, does not require an OpenAI API key, and does not require a local `follow-builders` checkout.
+Each digest groups the day's fetched items. The plugin does not generate AI summaries, does not require an OpenAI API key, and does not require a local `follow-builders` checkout.
 
 ## Install from a Release Package
 
@@ -110,9 +110,6 @@ Available settings:
 - `Sync X posts`: Sync X/Twitter items.
 - `Sync podcasts`: Sync podcast items.
 - `Sync blogs`: Sync blog items.
-- `Write daily digest`: Create or update one `Daily/YYYY-MM-DD.md` digest note for each synced day. Enabled by default.
-- `Overwrite existing files`: Rewrite existing Markdown files. Disabled by default.
-- `Clear sync history`: Clear remembered synced IDs. This does not delete existing Markdown files.
 
 For the first test, keep the defaults.
 
@@ -123,7 +120,7 @@ You can sync in either of these ways:
 1. Click the sync icon in Obsidian's left ribbon.
 2. Open the command palette and run `Sync Follow Builders feeds`.
 
-The first sync imports all items currently visible in the central feeds. Later syncs skip duplicates using synced IDs and existing files.
+Each sync fetches the currently visible central feed items and creates or updates the digest notes for the dates present in that fetch.
 
 ## Output Structure
 
@@ -131,23 +128,19 @@ Default output:
 
 ```text
 Follow Builders/
-  Daily/
-    2026-05-25.md
-  2026-05-25/
-    x-example-123.md
-    podcast-example-title.md
-    blog-example-title.md
+  2026-05-25.md
+  2026-05-26.md
 ```
 
-The `Daily/2026-05-25.md` file is a date-level aggregation with sections for podcasts, X/Twitter, and blogs when those sources have content. It is deterministic and based only on the fetched feed fields; it is not an AI-generated summary.
+Each `YYYY-MM-DD.md` file is a date-level aggregation with sections for podcasts, X/Twitter, and blogs when those sources have content. It is deterministic and based only on the fetched feed fields; it is not an AI-generated summary.
 
-Each item becomes one Markdown file containing:
+Each digest note contains:
 
 - frontmatter
-- original link
-- author or source
-- raw body or available title
-- available metadata
+- source sections
+- source names or authors
+- excerpts from the fetched content
+- original links for included items
 
 ## Network Requirements
 
@@ -193,5 +186,5 @@ The generated file is written under `dist/` and includes the root-level `install
 - Plugin does not appear: confirm that `manifest.json` and `main.js` were copied, and that the plugin folder is named `follow-builders-sync`.
 - Installer says `Vault directory does not exist`: pass the vault folder itself, not the `.obsidian` folder.
 - Sync creates no files: confirm the target folder setting is valid and check the Obsidian Notice for feed access failures.
-- Repeated syncs create no new files: this is expected when the feed has no new items.
-- Re-import from scratch: click `Clear sync history`; if needed, delete generated Markdown files, then sync again.
+- Repeated syncs create no new date files: this is expected when the feed only contains dates that already have digest notes; existing digest notes are updated.
+- Re-import from scratch: delete the generated digest Markdown files, then sync again.
