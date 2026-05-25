@@ -1,5 +1,5 @@
 vi.mock("obsidian", () => ({
-  normalizePath: (path: string) => path.replace(/\\/g, "/").replace(/\/+/g, "/"),
+  normalizePath: (path: string) => path.replace(/\\/g, "/").replace(/\/+/g, "/").replace(/^\/+|\/+$/g, ""),
   TFile: class TFile {},
   TFolder: class TFolder {}
 }));
@@ -149,6 +149,8 @@ describe("writeFeedItem", () => {
   it.each([
     "../Follow Builders",
     "/Follow Builders",
+    "\\\\server\\share",
+    "C:/Follow Builders",
     ".obsidian/Follow Builders",
     "Follow Builders/./Other",
     "Follow Builders/../Other",

@@ -52,7 +52,22 @@ function isFolder(entry: VaultEntry): entry is TFolder | FakeFolder {
 }
 
 export function normalizeRootFolder(rootFolder: string): string {
-  const normalized = normalizePath(rootFolder.trim().replace(/\\/g, "/")).replace(/\/+$/g, "");
+  const trimmed = rootFolder.trim();
+  const slashNormalized = trimmed.replace(/\\/g, "/");
+
+  if (!slashNormalized) {
+    throw new Error("Unsafe root folder: path must not be empty");
+  }
+
+  if (
+    slashNormalized.startsWith("/") ||
+    slashNormalized.startsWith("//") ||
+    /^[A-Za-z]:($|\/)/.test(slashNormalized)
+  ) {
+    throw new Error("Unsafe root folder: absolute paths are not allowed");
+  }
+
+  const normalized = normalizePath(slashNormalized).replace(/\/+$/g, "");
 
   if (!normalized) {
     throw new Error("Unsafe root folder: path must not be empty");
