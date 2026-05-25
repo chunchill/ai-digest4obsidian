@@ -1,0 +1,10 @@
+{
+  "id": "follow-builders-sync",
+  "name": "Follow Builders Sync",
+  "version": "0.1.0",
+  "minAppVersion": "1.5.0",
+  "description": "Sync raw Follow Builders central feed items into date-based Markdown notes.",
+  "author": "",
+  "authorUrl": "",
+  "isDesktopOnly": false
+}
