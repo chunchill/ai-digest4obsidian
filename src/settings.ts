@@ -56,6 +56,16 @@ export class FollowBuildersSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
+      .setName("Write daily digest")
+      .setDesc("Create or update one date-named digest note under Daily for each synced day.")
+      .addToggle((toggle) =>
+        toggle.setValue(this.plugin.settings.writeDailyDigest).onChange(async (value) => {
+          this.plugin.settings.writeDailyDigest = value;
+          await this.plugin.savePluginData();
+        })
+      );
+
+    new Setting(containerEl)
       .setName("Overwrite existing files")
       .setDesc("When enabled, sync rewrites an existing note for the same feed item.")
       .addToggle((toggle) =>

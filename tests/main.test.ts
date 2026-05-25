@@ -82,7 +82,12 @@ vi.mock("../src/sync", () => ({
 }));
 
 vi.mock("../src/writer", () => ({
+  writeDailyDigest: vi.fn(),
   writeFeedItem: vi.fn()
+}));
+
+vi.mock("../src/digest", () => ({
+  renderDailyDigestMarkdown: vi.fn(() => "# Digest\n")
 }));
 
 import FollowBuildersSyncPlugin from "../src/main";
@@ -115,7 +120,8 @@ describe("FollowBuildersSyncPlugin", () => {
       syncX: false,
       syncPodcasts: true,
       syncBlogs: false,
-      overwriteExisting: true
+      overwriteExisting: true,
+      writeDailyDigest: false
     });
 
     await plugin.onload();
@@ -125,7 +131,8 @@ describe("FollowBuildersSyncPlugin", () => {
       targetFolder: "Legacy Folder",
       syncX: false,
       syncBlogs: false,
-      overwriteExisting: true
+      overwriteExisting: true,
+      writeDailyDigest: false
     });
     expect(plugin.state).toEqual({ syncedIds: {} });
     expect(plugin.ribbonIcons).toHaveLength(1);
@@ -139,6 +146,10 @@ describe("FollowBuildersSyncPlugin", () => {
       updated: 2,
       skipped: 3,
       failed: 0,
+      digestCreated: 0,
+      digestUpdated: 1,
+      digestSkipped: 0,
+      digestFailed: 0,
       errors: ["Blog feed failed"]
     });
     const plugin = createPlugin();
@@ -151,7 +162,8 @@ describe("FollowBuildersSyncPlugin", () => {
       expect.objectContaining({
         settings: plugin.settings,
         state: plugin.state,
-        writeItem: expect.any(Function)
+        writeItem: expect.any(Function),
+        writeDigest: expect.any(Function)
       })
     );
     expect(plugin.getStoredData()).toEqual({
@@ -159,7 +171,7 @@ describe("FollowBuildersSyncPlugin", () => {
       state: plugin.state
     });
     expect(notices).toContain(
-      "Follow Builders sync complete: 1 created, 2 updated, 3 skipped, 0 failed, 1 warning."
+      "Follow Builders sync complete: 1 created, 2 updated, 3 skipped, 0 failed, 0 digest created, 1 digest updated, 0 digest skipped, 0 digest failed, 1 warning."
     );
   });
 
@@ -169,6 +181,10 @@ describe("FollowBuildersSyncPlugin", () => {
       updated: number;
       skipped: number;
       failed: number;
+      digestCreated: number;
+      digestUpdated: number;
+      digestSkipped: number;
+      digestFailed: number;
       errors: string[];
     }) => void) | undefined;
     vi.mocked(runSync).mockImplementation(
@@ -200,12 +216,16 @@ describe("FollowBuildersSyncPlugin", () => {
       updated: 0,
       skipped: 0,
       failed: 1,
+      digestCreated: 0,
+      digestUpdated: 0,
+      digestSkipped: 0,
+      digestFailed: 0,
       errors: ["Failed to write x:1: vault unavailable"]
     });
     await syncPromise;
 
     expect(notices).toContain(
-      "Follow Builders sync complete: 0 created, 0 updated, 0 skipped, 1 failed, 0 warnings."
+      "Follow Builders sync complete: 0 created, 0 updated, 0 skipped, 1 failed, 0 digest created, 0 digest updated, 0 digest skipped, 0 digest failed, 0 warnings."
     );
     expect(plugin.isSyncing()).toBe(false);
   });
