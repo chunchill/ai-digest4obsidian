@@ -158,7 +158,9 @@ describe("FollowBuildersSyncPlugin", () => {
       settings: plugin.settings,
       state: plugin.state
     });
-    expect(notices).toContain("Follow Builders sync complete: 1 created, 2 updated, 3 skipped, 1 issue.");
+    expect(notices).toContain(
+      "Follow Builders sync complete: 1 created, 2 updated, 3 skipped, 0 failed, 1 warning."
+    );
   });
 
   it("uses per-run settings and reports write failure issues once", async () => {
@@ -202,7 +204,9 @@ describe("FollowBuildersSyncPlugin", () => {
     });
     await syncPromise;
 
-    expect(notices).toContain("Follow Builders sync complete: 0 created, 0 updated, 0 skipped, 1 issue.");
+    expect(notices).toContain(
+      "Follow Builders sync complete: 0 created, 0 updated, 0 skipped, 1 failed, 0 warnings."
+    );
     expect(plugin.isSyncing()).toBe(false);
   });
 });

@@ -63,8 +63,8 @@ function partialState(value: unknown): Partial<FollowBuildersSyncState> {
   return state;
 }
 
-function issueLabel(count: number): string {
-  return count === 1 ? "issue" : "issues";
+function warningLabel(count: number): string {
+  return count === 1 ? "warning" : "warnings";
 }
 
 function errorMessage(error: unknown): string {
@@ -156,9 +156,9 @@ export default class FollowBuildersSyncPlugin extends Plugin {
       this.state = runState;
       await this.savePluginData();
 
-      const issueCount = result.errors.length;
+      const warningCount = Math.max(0, result.errors.length - result.failed);
       new Notice(
-        `Follow Builders sync complete: ${result.created} created, ${result.updated} updated, ${result.skipped} skipped, ${issueCount} ${issueLabel(issueCount)}.`
+        `Follow Builders sync complete: ${result.created} created, ${result.updated} updated, ${result.skipped} skipped, ${result.failed} failed, ${warningCount} ${warningLabel(warningCount)}.`
       );
     } catch (error) {
       new Notice(`Follow Builders sync failed: ${errorMessage(error)}`);
