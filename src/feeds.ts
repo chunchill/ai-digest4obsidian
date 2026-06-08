@@ -1,5 +1,5 @@
 import { requestUrl } from "obsidian";
-import { truncateText } from "./slug";
+import { parseFeedDate, truncateText } from "./slug";
 import type { FeedItem, FetchResult } from "./types";
 
 export const FEED_X_URL =
@@ -205,6 +205,7 @@ function parseBlogFeedResult(raw: unknown): ParsedFeed {
     return { items: [], skipped: 0 };
   }
 
+  const feedGeneratedAt = stringField(raw, "generatedAt");
   const items: FeedItem[] = [];
   let skipped = 0;
 
@@ -221,21 +222,31 @@ function parseBlogFeedResult(raw: unknown): ParsedFeed {
       stringField(blogRaw, "author");
     const title = stringField(blogRaw, "title");
     const url = stringField(blogRaw, "url") ?? stringField(blogRaw, "link");
-    const createdAt =
+    const createdAtRaw =
       stringField(blogRaw, "publishedAt") ??
       stringField(blogRaw, "createdAt") ??
-      stringField(blogRaw, "date");
+      stringField(blogRaw, "date") ??
+      feedGeneratedAt;
     const body =
       stringField(blogRaw, "content") ??
       stringField(blogRaw, "text") ??
       stringField(blogRaw, "summary") ??
       stringField(blogRaw, "description") ??
       title;
+    const description = stringField(blogRaw, "description");
 
-    if (!title || !url || !createdAt || !body) {
+    if (!title || !url || !createdAtRaw || !body) {
       skipped += 1;
       continue;
     }
+
+    const dateFallback = feedGeneratedAt ? new Date(feedGeneratedAt) : new Date();
+    const createdAt = parseFeedDate(createdAtRaw, dateFallback);
+    const usedFeedGeneratedAt =
+      !stringField(blogRaw, "publishedAt") &&
+      !stringField(blogRaw, "createdAt") &&
+      !stringField(blogRaw, "date") &&
+      Boolean(feedGeneratedAt);
 
     items.push({
       id: `blog:${url}`,
@@ -245,7 +256,10 @@ function parseBlogFeedResult(raw: unknown): ParsedFeed {
       url,
       createdAt,
       body,
-      metadata: {}
+      metadata: {
+        ...(description ? { description } : {}),
+        ...(usedFeedGeneratedAt ? { dateEstimated: true } : {})
+      }
     });
   }
 

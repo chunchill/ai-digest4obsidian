@@ -133,7 +133,7 @@ describe("FollowBuildersSyncPlugin", () => {
       overwriteExisting: true,
       writeDailyDigest: true
     });
-    expect(plugin.state).toEqual({ syncedIds: {} });
+    expect(plugin.state).toEqual({ syncedIds: {}, cachedItems: {} });
     expect(plugin.ribbonIcons).toHaveLength(1);
     expect(plugin.commands.map((command) => command.id)).toContain("sync-follow-builders-feeds");
     expect(plugin.settingTabs).toHaveLength(1);

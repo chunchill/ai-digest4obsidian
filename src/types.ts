@@ -9,6 +9,7 @@ export interface FollowBuildersSettings {
 
 export interface FollowBuildersSyncState {
   syncedIds: Record<string, true>;
+  cachedItems: Record<string, FeedItem>;
   lastSyncedAt?: string;
 }
 
@@ -61,6 +62,7 @@ export const DEFAULT_SETTINGS: FollowBuildersSettings = {
 
 export function createDefaultState(): FollowBuildersSyncState {
   return {
-    syncedIds: {}
+    syncedIds: {},
+    cachedItems: {}
   };
 }

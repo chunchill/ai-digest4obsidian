@@ -42,7 +42,7 @@ function writeResult(status: WriteResult["status"], path = "Follow Builders/item
 
 describe("runSync", () => {
   it("writes daily digests without writing raw feed item notes", async () => {
-    const state: FollowBuildersSyncState = { syncedIds: {} };
+    const state: FollowBuildersSyncState = { syncedIds: {}, cachedItems: {} };
     const writeItem = vi.fn();
     const writeDigest = vi.fn().mockResolvedValue(writeResult("created", "Follow Builders/2026-05-24.md"));
 
@@ -69,11 +69,41 @@ describe("runSync", () => {
     expect(writeItem).not.toHaveBeenCalled();
     expect(writeDigest).toHaveBeenCalledWith("2026-05-24", [item], nowIso);
     expect(state.syncedIds[item.id]).toBeUndefined();
+    expect(state.cachedItems[item.id]).toEqual(item);
     expect(state.lastSyncedAt).toBe(nowIso);
   });
 
+  it("keeps cached blog items in digests when a later fetch returns no blogs", async () => {
+    const blog: FeedItem = {
+      id: "blog:anthropic",
+      source: "blog",
+      title: "Anthropic Engineering: Managed agents",
+      author: "Anthropic Engineering",
+      url: "https://www.anthropic.com/engineering/managed-agents",
+      createdAt: "2026-06-05T07:42:12.776Z",
+      body: "Blog content",
+      metadata: {}
+    };
+    const state: FollowBuildersSyncState = {
+      syncedIds: {},
+      cachedItems: { [blog.id]: blog }
+    };
+    const writeDigest = vi.fn().mockResolvedValue(writeResult("updated", "Follow Builders/2026-06-05.md"));
+
+    await runSync({
+      settings,
+      state,
+      fetchFeeds: async () => ({ items: [item], skipped: 0, errors: [] }),
+      writeDigest,
+      now: syncedNow
+    });
+
+    expect(writeDigest).toHaveBeenCalledWith("2026-06-05", [blog], nowIso);
+    expect(writeDigest).toHaveBeenCalledWith("2026-05-24", [item], nowIso);
+  });
+
   it("ignores raw sync history and still writes digest notes", async () => {
-    const state: FollowBuildersSyncState = { syncedIds: { [item.id]: true } };
+    const state: FollowBuildersSyncState = { syncedIds: { [item.id]: true }, cachedItems: {} };
     const writeItem = vi.fn();
     const writeDigest = vi.fn().mockResolvedValue(writeResult("updated", "Follow Builders/2026-05-24.md"));
 
@@ -95,7 +125,7 @@ describe("runSync", () => {
   });
 
   it("keeps feed errors while writing successful items", async () => {
-    const state: FollowBuildersSyncState = { syncedIds: {} };
+    const state: FollowBuildersSyncState = { syncedIds: {}, cachedItems: {} };
 
     const result = await runSync({
       settings,
@@ -121,7 +151,7 @@ describe("runSync", () => {
   });
 
   it("counts digest write failures without marking raw ids synced", async () => {
-    const state: FollowBuildersSyncState = { syncedIds: {} };
+    const state: FollowBuildersSyncState = { syncedIds: {}, cachedItems: {} };
 
     const result = await runSync({
       settings,
@@ -141,7 +171,7 @@ describe("runSync", () => {
   });
 
   it("counts malformed items skipped during feed parsing", async () => {
-    const state: FollowBuildersSyncState = { syncedIds: {} };
+    const state: FollowBuildersSyncState = { syncedIds: {}, cachedItems: {} };
 
     const result = await runSync({
       settings,
@@ -159,7 +189,7 @@ describe("runSync", () => {
   });
 
   it("regenerates daily digests from fetched items even when raw items are already synced", async () => {
-    const state: FollowBuildersSyncState = { syncedIds: { [item.id]: true } };
+    const state: FollowBuildersSyncState = { syncedIds: { [item.id]: true }, cachedItems: {} };
     const writeItem = vi.fn();
     const writeDigest = vi.fn().mockResolvedValue({
       status: "updated",

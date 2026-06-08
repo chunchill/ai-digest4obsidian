@@ -6,7 +6,8 @@ import {
   DEFAULT_SETTINGS,
   createDefaultState,
   type FollowBuildersSettings,
-  type FollowBuildersSyncState
+  type FollowBuildersSyncState,
+  type FeedItem
 } from "./types";
 import { writeDailyDigest } from "./writer";
 
@@ -56,11 +57,32 @@ function partialState(value: unknown): Partial<FollowBuildersSyncState> {
       Object.entries(value.syncedIds).filter((entry): entry is [string, true] => entry[1] === true)
     );
   }
+  if (isRecord(value.cachedItems)) {
+    state.cachedItems = Object.fromEntries(
+      Object.entries(value.cachedItems).filter((entry): entry is [string, FeedItem] => isFeedItem(entry[1]))
+    );
+  }
   if (typeof value.lastSyncedAt === "string") {
     state.lastSyncedAt = value.lastSyncedAt;
   }
 
   return state;
+}
+
+function isFeedItem(value: unknown): value is FeedItem {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return (
+    typeof value.id === "string" &&
+    (value.source === "x" || value.source === "podcast" || value.source === "blog") &&
+    typeof value.title === "string" &&
+    typeof value.url === "string" &&
+    typeof value.createdAt === "string" &&
+    typeof value.body === "string" &&
+    isRecord(value.metadata)
+  );
 }
 
 function warningLabel(count: number): string {
@@ -106,7 +128,8 @@ export default class FollowBuildersSyncPlugin extends Plugin {
     this.state = {
       ...createDefaultState(),
       ...nextState,
-      syncedIds: nextState.syncedIds ?? {}
+      syncedIds: nextState.syncedIds ?? {},
+      cachedItems: nextState.cachedItems ?? {}
     };
   }
 

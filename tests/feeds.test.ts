@@ -186,6 +186,46 @@ describe("parseBlogFeed", () => {
       body: "Engineering post"
     });
   });
+
+  it("accepts Anthropic posts without publishedAt using feed generatedAt", () => {
+    const [item] = parseBlogFeed({
+      generatedAt: "2026-06-05T07:42:12.776Z",
+      blogs: [
+        {
+          source: "Anthropic Engineering",
+          title: "Scaling Managed Agents",
+          url: "https://www.anthropic.com/engineering/managed-agents",
+          content: "Blog content"
+        }
+      ]
+    });
+
+    expect(item).toMatchObject({
+      id: "blog:https://www.anthropic.com/engineering/managed-agents",
+      source: "blog",
+      createdAt: "2026-06-05T07:42:12.776Z",
+      body: "Blog content",
+      metadata: {
+        dateEstimated: true
+      }
+    });
+  });
+
+  it("normalizes human-readable publishedAt values", () => {
+    const [item] = parseBlogFeed({
+      blogs: [
+        {
+          source: "Claude Blog",
+          title: "Connectors",
+          url: "https://claude.com/blog/connectors-for-everyday-life",
+          publishedAt: "Apr 23, 2026",
+          content: "Blog content"
+        }
+      ]
+    });
+
+    expect(item?.createdAt).toBe("2026-04-23T12:00:00.000Z");
+  });
 });
 
 describe("fetchEnabledFeeds", () => {

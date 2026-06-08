@@ -14,7 +14,8 @@ describe("settings defaults", () => {
 
   it("creates an empty sync state", () => {
     expect(createDefaultState()).toEqual({
-      syncedIds: {}
+      syncedIds: {},
+      cachedItems: {}
     });
   });
 });

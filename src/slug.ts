@@ -9,9 +9,28 @@ export function safeFileName(input: string, maxLength = 80): string {
   return slug || "untitled";
 }
 
+export function parseFeedDate(value: string, fallback = new Date()): string {
+  const trimmed = value.trim();
+  const localeDateMatch = trimmed.match(/^([A-Za-z]+)\s+(\d{1,2}),\s+(\d{4})$/);
+
+  if (localeDateMatch) {
+    const parsed = new Date(`${localeDateMatch[1]} ${localeDateMatch[2]}, ${localeDateMatch[3]} 12:00:00 GMT`);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toISOString();
+    }
+  }
+
+  const parsed = new Date(trimmed);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toISOString();
+  }
+
+  return fallback.toISOString();
+}
+
 export function dateFolderFromIso(isoTimestamp: string, today = new Date()): string {
-  const date = new Date(isoTimestamp);
-  const validDate = Number.isNaN(date.getTime()) ? today : date;
+  const parsed = new Date(isoTimestamp.trim());
+  const validDate = Number.isNaN(parsed.getTime()) ? today : parsed;
 
   return validDate.toISOString().slice(0, 10);
 }

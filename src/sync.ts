@@ -1,4 +1,5 @@
 import { fetchEnabledFeeds } from "./feeds";
+import { digestItemsFromCache, updateItemCache } from "./cache";
 import { groupItemsByDate } from "./digest";
 import type {
   FeedItem,
@@ -56,8 +57,11 @@ export async function runSync({
   result.skipped += fetched.skipped;
   result.errors.push(...fetched.errors);
 
+  state.cachedItems = updateItemCache(state.cachedItems ?? {}, fetched.items, settings);
+  const digestItems = digestItemsFromCache(state.cachedItems, settings);
+
   if (settings.writeDailyDigest && writeDigest) {
-    for (const [date, items] of groupItemsByDate(fetched.items)) {
+    for (const [date, items] of groupItemsByDate(digestItems)) {
       try {
         const writeResult = await writeDigest(date, items, syncedAt);
         countDigestWrite(result, writeResult.status);
