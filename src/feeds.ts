@@ -1,6 +1,10 @@
 import { requestUrl } from "obsidian";
-import { parseFeedDate, truncateText } from "./slug";
+import { mergeFeedItems } from "./cache";
+import { fetchLocalFallbackItems } from "./local-fallback";
+import { parseFeedDate, titleWithAuthor } from "./slug";
 import type { FeedItem, FetchResult } from "./types";
+
+export { titleWithAuthor };
 
 export const FEED_X_URL =
   "https://raw.githubusercontent.com/zarazhangrui/follow-builders/main/feed-x.json";
@@ -21,11 +25,6 @@ export function stringField(record: Record<string, unknown>, key: string): strin
 export function arrayField(record: Record<string, unknown>, key: string): unknown[] {
   const value = record[key];
   return Array.isArray(value) ? value : [];
-}
-
-export function titleWithAuthor(author: string | undefined, title: string): string {
-  const normalizedTitle = truncateText(title.replace(/\s+/g, " ").trim(), 80);
-  return author ? `${author}: ${normalizedTitle}` : normalizedTitle;
 }
 
 function numberField(record: Record<string, unknown>, key: string): number | undefined {
@@ -279,6 +278,8 @@ export async function fetchEnabledFeeds(options: {
   syncX: boolean;
   syncPodcasts: boolean;
   syncBlogs: boolean;
+  syncLocalFallback: boolean;
+  now?: () => Date;
 }): Promise<FetchResult> {
   const items: FeedItem[] = [];
   let skipped = 0;
@@ -319,6 +320,23 @@ export async function fetchEnabledFeeds(options: {
       errors.push(...result.errors);
     } catch (error) {
       errors.push(`Blog feed failed: ${errorMessage(error)}`);
+    }
+  }
+
+  if (options.syncLocalFallback && (options.syncBlogs || options.syncPodcasts)) {
+    try {
+      const local = await fetchLocalFallbackItems({
+        syncBlogs: options.syncBlogs,
+        syncPodcasts: options.syncPodcasts,
+        syncLocalFallback: true,
+        now: options.now?.()
+      });
+      const merged = mergeFeedItems(items, local.items);
+      items.length = 0;
+      items.push(...merged);
+      errors.push(...local.errors);
+    } catch (error) {
+      errors.push(`Local fallback failed: ${errorMessage(error)}`);
     }
   }
 

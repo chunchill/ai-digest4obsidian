@@ -3,6 +3,7 @@ export interface FollowBuildersSettings {
   syncX: boolean;
   syncPodcasts: boolean;
   syncBlogs: boolean;
+  syncLocalFallback: boolean;
   overwriteExisting: boolean;
   writeDailyDigest: boolean;
 }
@@ -56,6 +57,7 @@ export const DEFAULT_SETTINGS: FollowBuildersSettings = {
   syncX: true,
   syncPodcasts: true,
   syncBlogs: true,
+  syncLocalFallback: true,
   overwriteExisting: false,
   writeDailyDigest: true
 };

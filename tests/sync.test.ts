@@ -11,6 +11,7 @@ const settings: FollowBuildersSettings = {
   syncX: true,
   syncPodcasts: true,
   syncBlogs: true,
+  syncLocalFallback: true,
   overwriteExisting: false,
   writeDailyDigest: true
 };

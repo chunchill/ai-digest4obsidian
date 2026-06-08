@@ -38,3 +38,8 @@ export function dateFolderFromIso(isoTimestamp: string, today = new Date()): str
 export function truncateText(text: string, maxLength: number): string {
   return text.slice(0, maxLength);
 }
+
+export function titleWithAuthor(author: string | undefined, title: string): string {
+  const normalizedTitle = truncateText(title.replace(/\s+/g, " ").trim(), 80);
+  return author ? `${author}: ${normalizedTitle}` : normalizedTitle;
+}

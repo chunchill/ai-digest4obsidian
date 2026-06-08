@@ -39,6 +39,9 @@ function partialSettings(value: unknown): Partial<FollowBuildersSettings> {
   if (typeof value.syncBlogs === "boolean") {
     settings.syncBlogs = value.syncBlogs;
   }
+  if (typeof value.syncLocalFallback === "boolean") {
+    settings.syncLocalFallback = value.syncLocalFallback;
+  }
   if (typeof value.overwriteExisting === "boolean") {
     settings.overwriteExisting = value.overwriteExisting;
   }

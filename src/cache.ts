@@ -1,5 +1,17 @@
 import type { FeedItem, FollowBuildersSettings } from "./types";
 
+export function mergeFeedItems(primary: FeedItem[], secondary: FeedItem[]): FeedItem[] {
+  const byId = new Map(primary.map((item) => [item.id, item]));
+
+  for (const item of secondary) {
+    if (!byId.has(item.id)) {
+      byId.set(item.id, item);
+    }
+  }
+
+  return [...byId.values()];
+}
+
 export function isSourceEnabled(source: FeedItem["source"], settings: FollowBuildersSettings): boolean {
   if (source === "x") {
     return settings.syncX;

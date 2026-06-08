@@ -262,7 +262,8 @@ describe("fetchEnabledFeeds", () => {
     const result = await fetchEnabledFeeds({
       syncX: true,
       syncPodcasts: true,
-      syncBlogs: true
+      syncBlogs: true,
+      syncLocalFallback: false
     });
 
     expect(result.errors).toEqual(["X feed failed: network down"]);
@@ -278,7 +279,8 @@ describe("fetchEnabledFeeds", () => {
     const result = await fetchEnabledFeeds({
       syncX: true,
       syncPodcasts: false,
-      syncBlogs: false
+      syncBlogs: false,
+      syncLocalFallback: false
     });
 
     expect(result).toEqual({
@@ -307,7 +309,8 @@ describe("fetchEnabledFeeds", () => {
     const result = await fetchEnabledFeeds({
       syncX: false,
       syncPodcasts: true,
-      syncBlogs: false
+      syncBlogs: false,
+      syncLocalFallback: false
     });
 
     expect(result.errors).toEqual(["Podcast feed warning: transcript fetch incomplete"]);
@@ -337,7 +340,8 @@ describe("fetchEnabledFeeds", () => {
     const result = await fetchEnabledFeeds({
       syncX: true,
       syncPodcasts: true,
-      syncBlogs: true
+      syncBlogs: true,
+      syncLocalFallback: false
     });
 
     expect(result.errors).toEqual(["Podcast feed failed: expected top-level podcasts array"]);
@@ -375,7 +379,8 @@ describe("fetchEnabledFeeds", () => {
     const result = await fetchEnabledFeeds({
       syncX: true,
       syncPodcasts: false,
-      syncBlogs: false
+      syncBlogs: false,
+      syncLocalFallback: false
     });
 
     expect(result.items.map((item) => item.id)).toEqual(["x:2058377974882210096"]);

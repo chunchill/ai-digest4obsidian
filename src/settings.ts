@@ -56,6 +56,18 @@ export class FollowBuildersSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
+      .setName("Local product fallback")
+      .setDesc(
+        "Also fetch official blogs, release notes, and YouTube updates for Anthropic, Claude, Cursor, OpenAI Codex, and OpenCode when central feeds are sparse."
+      )
+      .addToggle((toggle) =>
+        toggle.setValue(this.plugin.settings.syncLocalFallback).onChange(async (value) => {
+          this.plugin.settings.syncLocalFallback = value;
+          await this.plugin.savePluginData();
+        })
+      );
+
+    new Setting(containerEl)
       .setName("Digest output")
       .setDesc("Sync writes date-named digest notes directly in the target folder.");
   }
