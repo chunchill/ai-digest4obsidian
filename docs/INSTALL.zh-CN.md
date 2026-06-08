@@ -14,6 +14,8 @@
 
 ## 从 Release 包安装
 
+在 GitHub 的 **Releases** 页面下载 `follow-builders-sync-<version>.zip` 资产文件，不要下载 tag 页面自动生成的 `Source code (zip)`。源码包包含 `src/`、`tests/` 等开发文件，安装脚本位于 `scripts/install-to-vault.sh`，与 release 包目录结构不同。
+
 下载 release zip，解压后在解压目录中运行：
 
 ```bash

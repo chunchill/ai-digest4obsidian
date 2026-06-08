@@ -28,6 +28,8 @@ The plugin does not write separate raw feed item notes into the vault.
 
 ## Install from a Release Package
 
+Download the `follow-builders-sync-<version>.zip` asset from the [GitHub Releases page](https://github.com/chunchill/ai-digest4obsidian/releases), not the tag page's `Source code (zip)`.
+
 Download and unzip the release package, then run:
 
 ```bash

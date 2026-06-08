@@ -14,6 +14,8 @@ Each digest groups the day's fetched items. The plugin does not generate AI summ
 
 ## Install from a Release Package
 
+Download the `follow-builders-sync-<version>.zip` asset from the GitHub **Releases** page. Do not use the tag page's auto-generated `Source code (zip)`. The source archive includes development files such as `src/` and `tests/`, and its installer lives at `scripts/install-to-vault.sh`, which is a different layout from the release package.
+
 Download the release zip, unzip it, and run the installer from the unzipped folder:
 
 ```bash
